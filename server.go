@@ -1,43 +1,30 @@
 package main
 
 import (
-	// "database/sql"
 	// "fmt"
-	// "net/http"
-	// "html/template"
+	"net/http"
+	"html/template"
 )
 
-// func outputTable(w http.ResponseWriter, r *http.Request) {
-// 	rows, err := db.Query("select * from song_info")
-// 	CheckError(err)
+func outputTable(w http.ResponseWriter, r *http.Request) {
+	rows, err := datab.Query("select * from song_info")
+	CheckError(err)
+	defer rows.Close()
 
-// 	songs := []Song{}
-// 	for rows.Next() {
-// 		s := Song{}
-// 		err := rows.Scan(&s.artist_names, &s.title, &s.song_id, &s.path, &s.album_title)
-			
-// 		if err != nil{
-// 			fmt.Println(err)
-// 			continue
-// 		}	
-// 		songs = append(songs, s)
-// 	}
-// 	rows.Close()
+	songs := []Song{}
+	for rows.Next() {
+		s := Song{}
+		err := rows.Scan(&s.Id, &s.Path, &s.Release_date, &s.Title, &s.Name)
+		CheckError(err)
+		songs = append(songs, s)
+	}
 
-// 	for _, s := range songs {
-// 		fmt.Println(s.artist_names, s.title, s.song_id, s.path, s.album_title)
-// 	}
+	// for _, s := range songs {
+	// 	fmt.Println(s.Id, s.Path, s.Release_date, s.Title, s.Name)
+	// }
 
-// 	tmpl, _ := template.ParseFiles("static/table.html")
-// 	tmpl.Execute(w, songs)
-
-// 		// fmt.Fprint(w, `
-// 		// 	<table>
-// 		// 		<tr>
-// 		// 			<th>test</th>
-// 		// 			<th>test2</th>
-// 		// 		</tr>
-// 		// 	</table>
-// 		// `)
-	
-// }
+	tmpl, err := template.ParseFiles("static/table.html")
+	CheckError(err)
+	err2 := tmpl.Execute(w, songs)
+	CheckError(err2)
+}

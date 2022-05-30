@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<head>
+			<meta charset="UTF-8">
+			<title>Songs</title>
+	</head>
+	<body>
+			<table>
+				<thead><th>ID</th><th>path</th><th>release_date</th><th>title</th><th>album_title</th></thead>
+				{{range . }}
+					<tr>
+						<td>{{.Id}}</td>
+						<td>{{.Path}}</td>
+						<td>{{.Release_date}}</td>
+						<td>{{.Title}}</td>
+						<td>{{.Name}}</td>
+					</tr>	
+				{{end}}
+		</table>
+	</body>
+</html>

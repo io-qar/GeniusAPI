@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"net/http"
+	"html/template"
 
 	_ "github.com/lib/pq"
 	"github.com/tidwall/gjson"
@@ -16,6 +18,8 @@ const (
 	password = "admin"
 	dbname   = "GeniusAPI"
 )
+
+var datab *sql.DB
 
 func CheckError(err error) {
 	if err != nil {
@@ -38,20 +42,18 @@ func createTable(db *sql.DB, tblName string, clmNames [5]string) {
 	for _, clmName := range clmNames {
 		_, err := db.Exec(fmt.Sprintf("alter table %s add column if not exists %s TEXT", tblName, clmName))
 		CheckError(err)
-		// _, err2 := db.Exec(fmt.Sprintf("alter table %s add primary key (id)", tblName))
-		// CheckError(err2)
 	}
 }
 
-func insertTable(db *sql.DB, data []gjson.Result, clmNames [5]string, songId ...int) {
+func insertTable(db *sql.DB, data []gjson.Result, clmNames [5]string, songId int) {
 	var i, j int = 0, 0
 	var fl bool = false
-	var str = ""
+	var str string = ""
 
 	for ; i < len(clmNames); {
-		for ; j < len(data); {
+		for ; j < len(data); j++ {
 			if (fl) {
-				str = "update song_info set " + clmNames[i] + " = '" + data[j].String() + "' where id = '" + strconv.Itoa(songId[0]) + "'"
+				str = "update song_info set " + clmNames[i] + " = '" + data[j].String() + "' where id = '" + strconv.Itoa(songId) + "'"
 				_, err := db.Exec(str)
 				CheckError(err)
 			} else {
@@ -61,21 +63,50 @@ func insertTable(db *sql.DB, data []gjson.Result, clmNames [5]string, songId ...
 				CheckError(err)
 			}
 			i++
-			j++
 		}
 	}
 }
 
+func outputTable(w http.ResponseWriter, r *http.Request) {
+	rows, err := datab.Query("select * from song_info")
+	CheckError(err)
+	defer rows.Close()
+
+	songs := []Song{}
+	for rows.Next() {
+		s := Song{}
+		err := rows.Scan(&s.Id, &s.Path, &s.Release_date, &s.Title, &s.Name)
+		CheckError(err)
+		songs = append(songs, s)
+	}
+
+	for _, s := range songs {
+		fmt.Println(s.Id, s.Path, s.Release_date, s.Title, s.Name)
+	}
+
+	tmpl, err := template.ParseFiles("static/table.html")
+	CheckError(err)
+	err2 := tmpl.Execute(w, songs)
+	CheckError(err2)
+}
+
 func main() {
 	clmNames := [5]string{"id", "path", "release_date", "title", "name"}
-	db := dbCon()
+	datab = dbCon()
+	defer datab.Close()
 
-	createTable(db, "song_info", clmNames)
+	createTable(datab, "song_info", clmNames)
 	req, song_id := request()
 
 	results := gjson.GetMany(req, "response.song.id", "response.song.path", "response.song.release_date", "response.song.title", "response.song.album.name")
 
-	insertTable(db, results, clmNames, song_id)
+	insertTable(datab, results, clmNames, song_id)
 
-	db.Close()
+	fs := http.FileServer(http.Dir("."))
+	http.Handle("/", fs)
+	http.HandleFunc("/table", outputTable)
+
+	fmt.Println("Server is listening...")
+	http.ListenAndServe("localhost:80", nil)
+	
 }

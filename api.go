@@ -12,7 +12,7 @@ import (
 func request() (string, int) {
 	client := &http.Client{}
 
-	var max = 5000
+	var max = 500
 	rndm, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
 	rndmInt := int(rndm.Uint64())
 	var song_id string = strconv.Itoa(rndmInt)

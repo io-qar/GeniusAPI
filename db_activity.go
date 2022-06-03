@@ -3,8 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	// "reflect"
 	"strconv"
-	"github.com/tidwall/gjson"
+
+	// "github.com/tidwall/gjson"
+	// "google.golang.org/api/keep/v1"
 )
 
 const (
@@ -24,6 +27,11 @@ func dbCon() *sql.DB {
 	return db
 }
 
+func createDb(dbname string) {
+	_, err := datab.Exec(fmt.Sprintf("create database '%s'", dbname))
+	CheckError(err)
+}
+
 func createTable(tblName string, clmNames [5]string) {
 	_, err := datab.Exec(fmt.Sprintf("create table if not exists %s ()", tblName))
 	CheckError(err)
@@ -33,24 +41,22 @@ func createTable(tblName string, clmNames [5]string) {
 	}
 }
 
-func insertTable(data []gjson.Result, clmNames [5]string, songId int) {
-	var i, j int = 0, 0
-	var fl bool = false
-	var str string = ""
+func insertTable(s map[string]string, songId int) {
+	var (
+		fl bool = false
+		str string = ""
+	)
 
-	for ; i < len(clmNames); {
-		for ; j < len(data); j++ {
-			if (fl) {
-				str = "update song_info set " + clmNames[i] + " = '" + data[j].String() + "' where id = '" + strconv.Itoa(songId) + "'"
-				_, err := datab.Exec(str)
-				CheckError(err)
-			} else {
-				str = "insert into song_info (%s) values ('%s')"
-				fl = true
-				_, err := datab.Exec(fmt.Sprintf(str, clmNames[i], data[j].String()))
-				CheckError(err)
-			}
-			i++
+	for key, val := range s {
+		if (fl) {
+			str = "update song_info set " + key + " = '" + val + "' where Id = '" + strconv.Itoa(songId) + "'"
+			_, err := datab.Exec(str)
+			CheckError(err)
+		} else {
+			str = "insert into song_info (%s) values ('%s')"
+			fl = true
+			_, err := datab.Exec(fmt.Sprintf(str, key, val))
+			CheckError(err)
 		}
 	}
 }

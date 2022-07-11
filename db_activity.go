@@ -3,12 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	// "reflect"
 	"strconv"
 	"html/template"
-
-	// "github.com/tidwall/gjson"
-	// "google.golang.org/api/keep/v1"
 )
 
 const (
@@ -28,10 +24,10 @@ func dbCon() *sql.DB {
 	return db
 }
 
-func createDb(dbname string) {
-	_, err := datab.Exec(fmt.Sprintf("create database '%s'", dbname))
-	CheckError(err)
-}
+// func createDb(dbname string) {
+// 	_, err := datab.Exec(fmt.Sprintf("create database '%s'", dbname))
+// 	CheckError(err)
+// }
 
 func createTable(tblName string, clmNames [5]string) {
 	_, err := datab.Exec(fmt.Sprintf("create table if not exists %s ()", tblName))

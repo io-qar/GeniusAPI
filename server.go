@@ -18,10 +18,6 @@ func outputTableAll(w http.ResponseWriter, r *http.Request) {
 		songs = append(songs, s)
 	}
 
-	// for _, s := range songs {
-	// 	println(s.Id, s.Path, s.Release_date, s.Title, s.Name)
-	// }
-
 	tmpl, err := template.ParseFiles("static/table.html")
 	CheckError(err)
 	err2 := tmpl.Execute(w, songs)

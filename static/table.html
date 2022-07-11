@@ -1,21 +1,43 @@
 <!DOCTYPE html>
 <html>
 	<head>
-			<meta charset="UTF-8">
-			<title>Songs</title>
+		<meta charset="UTF-8">
+		<title>Songs</title>
+		<link href="styles.css" rel="stylsheet">
 	</head>
 	<body>
-			<table>
-				<thead><th>ID</th><th>path</th><th>release_date</th><th>title</th><th>album_title</th></thead>
-				{{range . }}
-					<tr>
-						<td>{{.Id}}</td>
-						<td>{{.Path}}</td>
-						<td>{{.Release_date}}</td>
-						<td>{{.Title}}</td>
-						<td>{{.Name}}</td>
-					</tr>	
-				{{end}}
-		</table>
+		<div class="grid-container">
+			<div class="grid-item">
+				<table>
+					<thead>
+						<th>ID</th><th>path</th><th>release_date</th><th>title</th><th>album_title</th>
+					</thead>
+					{{range . }}
+						<tr>
+							<td>{{.Id}}</td>
+							<td>{{.Path}}</td>
+							<td>{{.Release_date}}</td>
+							<td>{{.Title}}</td>
+							<td>{{.Name}}</td>
+						</tr>
+					{{end}}
+				</table>
+			</div>
+			<div class="grid-item">
+				<form action="/search" method="post">
+					<label>Искать </label>
+					<input type="text" name="req" placeholder="ваш запрос..." required>
+					<input list="categoryList" name="category" required>
+					<datalist id="categoryList">
+						<option value="id">Номер</option>
+						<option value="title">Песня</option>
+						<option value="path">Исполнитель</option>
+						<option value="release_date">Дата выхода</option>
+						<option value="name">Название альбома</option>
+					</datalist>
+					<input type="submit" value="Отправить">
+				</form>
+			</div>
+		</div>
 	</body>
 </html>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	// "reflect"
 	"strconv"
+	"html/template"
 
 	// "github.com/tidwall/gjson"
 	// "google.golang.org/api/keep/v1"
@@ -38,6 +39,9 @@ func createTable(tblName string, clmNames [5]string) {
 	for _, clmName := range clmNames {
 		_, err := datab.Exec(fmt.Sprintf("alter table %s add column if not exists %s TEXT", tblName, clmName))
 		CheckError(err)
+		_, err = datab.Exec(fmt.Sprintf("alter table %s alter column %s set not null", tblName, clmName))
+		CheckError(err)
+		_, err = datab.Exec(fmt.Sprintf("alter table %s alter column %s set default '--'", tblName, clmName))
 	}
 }
 
@@ -48,15 +52,39 @@ func insertTable(s map[string]string, songId int) {
 	)
 
 	for key, val := range s {
-		if (fl) {
-			str = "update song_info set " + key + " = '" + val + "' where Id = '" + strconv.Itoa(songId) + "'"
-			_, err := datab.Exec(str)
-			CheckError(err)
+		if val == "" {
+			continue
 		} else {
-			str = "insert into song_info (%s) values ('%s')"
-			fl = true
-			_, err := datab.Exec(fmt.Sprintf(str, key, val))
-			CheckError(err)
+			if (fl) {
+				str = "update song_info set " + key + " = '" + val + "' where Id = '" + strconv.Itoa(songId) + "'"
+				_, err := datab.Exec(str)
+				CheckError(err)
+			} else {
+				str = "insert into song_info (%s) values ('%s')"
+				fl = true
+				_, err := datab.Exec(fmt.Sprintf(str, key, val))
+				CheckError(err)
+			}
 		}
 	}
+}
+
+func searchTable(reqS string, reqTbl string) (*template.Template, []Song) {
+	var str string = "select * from song_info where " + reqTbl + " like '%" + reqS + "%'"
+	rows, err := datab.Query(str)
+	CheckError(err)
+	defer rows.Close()
+
+	searchResults := []Song{}
+	for rows.Next() {
+		s := Song{}
+		err := rows.Scan(&s.Id, &s.Path, &s.Release_date, &s.Title, &s.Name)
+		CheckError(err)
+		searchResults = append(searchResults, s)
+	}
+
+	tmpl, err := template.ParseFiles("static/searchResults.html")
+	CheckError(err)
+
+	return tmpl, searchResults
 }

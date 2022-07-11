@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 
 	_ "github.com/lib/pq"
@@ -18,13 +17,13 @@ func CheckError(err error) {
 }
 
 func main() {
-	clmNames := [5]string{"Id", "Path", "Release_date", "Title", "Name"}
+	clmNames := [5]string{"id", "path", "release_date", "title", "name"}
 	datab = dbCon()
 	defer datab.Close()
 
 	createTable("song_info", clmNames)
-	req, song_id := request()
 
+	req, song_id := request()
 	results := gjson.GetMany(req, "response.song.id", "response.song.path", "response.song.release_date", "response.song.title", "response.song.album.name")
 
 	var song = map[string]string {
@@ -35,12 +34,19 @@ func main() {
 		clmNames[4]: results[4].String(),
 	}
 
-	fmt.Println(song)
-
 	insertTable(song, song_id)
 
-	http.HandleFunc("/", outputTable)
+	http.HandleFunc("/", outputTableAll)
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		reqS := r.FormValue("req")
+		reqTbl := r.FormValue("category")
+		
+		tmpl, searchResults := searchTable(reqS, reqTbl)
+		
+		err2 := tmpl.Execute(w, searchResults)
+		CheckError(err2)
+	})
 
-	fmt.Println("Server is listening...")
+	println("Server is listening...");
 	http.ListenAndServe("localhost:80", nil)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"html/template"
+	"context"
 )
 
 const (
@@ -24,21 +25,29 @@ func dbCon() *sql.DB {
 	return db
 }
 
-// func createDb(dbname string) {
-// 	_, err := datab.Exec(fmt.Sprintf("create database '%s'", dbname))
-// 	CheckError(err)
-// }
+func createDb(dbname string) {
+	_, err := datab.Exec(fmt.Sprintf("create database '%s'", dbname))
+	CheckError(err)
+}
 
 func createTable(tblName string, clmNames [5]string) {
-	_, err := datab.Exec(fmt.Sprintf("create table if not exists %s ()", tblName))
+	ctx := context.Background()
+	tx, err := datab.BeginTx(ctx, nil)
+	CheckError(err)
+
+	_, err = tx.ExecContext(ctx, fmt.Sprintf("create table if not exists %s ()", tblName))
 	CheckError(err)
 	for _, clmName := range clmNames {
-		_, err := datab.Exec(fmt.Sprintf("alter table %s add column if not exists %s TEXT", tblName, clmName))
+		_, err := tx.ExecContext(ctx, fmt.Sprintf("alter table %s add column if not exists %s TEXT", tblName, clmName))
 		CheckError(err)
-		_, err = datab.Exec(fmt.Sprintf("alter table %s alter column %s set not null", tblName, clmName))
+		_, err = tx.ExecContext(ctx, fmt.Sprintf("alter table %s alter column %s set not null", tblName, clmName))
 		CheckError(err)
-		_, err = datab.Exec(fmt.Sprintf("alter table %s alter column %s set default '--'", tblName, clmName))
+		_, err = tx.ExecContext(ctx, fmt.Sprintf("alter table %s alter column %s set default '--'", tblName, clmName))
+		CheckError(err)
 	}
+
+	err = tx.Commit()
+	CheckError(err)
 }
 
 func insertTable(s map[string]string, songId int) {
@@ -46,23 +55,22 @@ func insertTable(s map[string]string, songId int) {
 		fl bool = false
 		str string = ""
 	)
-
+	ctx := context.Background()
+	tx, err := datab.BeginTx(ctx, nil)
+	CheckError(err)
+	
 	for key, val := range s {
-		if val == "" {
-			continue
-		} else {
-			if (fl) {
+		if (fl) {
 				str = "update song_info set " + key + " = '" + val + "' where Id = '" + strconv.Itoa(songId) + "'"
-				_, err := datab.Exec(str)
+				_, err := tx.ExecContext(ctx, str)
 				CheckError(err)
 			} else {
 				str = "insert into song_info (%s) values ('%s')"
 				fl = true
-				_, err := datab.Exec(fmt.Sprintf(str, key, val))
+				_, err := tx.ExecContext(ctx, fmt.Sprintf(str, key, val))
 				CheckError(err)
 			}
 		}
-	}
 }
 
 func searchTable(reqS string, reqTbl string) (*template.Template, []Song) {

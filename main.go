@@ -18,6 +18,7 @@ func CheckError(err error) {
 
 func main() {
 	clmNames := [5]string{"id", "path", "release_date", "title", "name"}
+	// createDb("GeniusAPI")
 	datab = dbCon()
 	defer datab.Close()
 
